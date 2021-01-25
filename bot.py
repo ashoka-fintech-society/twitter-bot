@@ -1,13 +1,16 @@
+from dotenv import load_dotenv; load_dotenv()
+import os
+
 import tweepy
 import requests
 from bs4 import BeautifulSoup
 import time
 
 #==============================================================================
-CONSUMER_KEY = '1hESgAwuzI4Z6Vq3OEmaMdbXB'
-CONSUMER_SECRET = 'rz5cmuzi9tqPr1rKmFTo9ue3DyK6bqbZF4jRAOtvMioL0redvf'
-ACCESS_KEY = '1344235008911835137-jUqEft66iWjqI7FC0zl0tuEQadZXK7'
-ACCESS_SECRET = 'S3wjX1pXLSWHZjihGjF1cuHx8KCbm1CvHjDnHFzi5MYEc'
+CONSUMER_KEY = os.getenv('CONSUMER_KEY')
+CONSUMER_SECRET = os.getenv('CONSUMER_SECRET')
+ACCESS_KEY = os.getenv('ACCESS_KEY')
+ACCESS_SECRET = os.getenv('ACCESS_SECRET')
 
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
