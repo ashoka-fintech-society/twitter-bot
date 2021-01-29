@@ -1,5 +1,5 @@
 from dotenv import load_dotenv; load_dotenv()
-import tweepy
+from TwitterAPI import TwitterAPI
 import requests
 from bs4 import BeautifulSoup
 
@@ -10,12 +10,10 @@ import json
 
 CONSUMER_KEY = os.getenv('CONSUMER_KEY')
 CONSUMER_SECRET = os.getenv('CONSUMER_SECRET')
-ACCESS_KEY = os.getenv('ACCESS_KEY')
-ACCESS_SECRET = os.getenv('ACCESS_SECRET')
+ACCESS_TOKEN_KEY = os.getenv('ACCESS_TOKEN_KEY')
+ACCESS_TOKEN_SECRET = os.getenv('ACCESS_TOKEN_SECRET')
 
-auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-auth.set_access_token(ACCESS_KEY, ACCESS_SECRET)
-api = tweepy.API(auth)
+api = TwitterAPI(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN_KEY, ACCESS_TOKEN_SECRET)
 
 #==============================================================================
 
@@ -44,8 +42,9 @@ def web_source(link, anchorElemClass, limit):
 		
 		if tempLink not in prevLinks:
 			tempTitle = anchorElem.string.strip().title()
-			prevLinks[tempLink] = tempTitle
-			#api.update_status(f'{tempTitle}\n{tempLink}')
+			r = api.request('statuses/update', {'status':f'{tempTitle}\n{tempLink}'})
+			if r.status_code == 200:
+				prevLinks[tempLink] = tempTitle
 
 def executeBlock():
 
