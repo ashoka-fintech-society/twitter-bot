@@ -2,6 +2,8 @@ from dotenv import load_dotenv; load_dotenv()
 from TwitterAPI import TwitterAPI
 import requests
 from bs4 import BeautifulSoup
+from psycopg2.errors import UniqueViolation
+from sqlalchemy.exc import IntegrityError
 
 import os
 import json
@@ -17,46 +19,42 @@ api = TwitterAPI(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN_KEY, ACCESS_TOKEN_S
 
 #==============================================================================
 
-FILENAME = 'prevLinks.json'
-prevLinks = json.load(open(FILENAME))
-
 scrapeList = {
 	'Forbes': ['https://www.forbes.com/search/?q=(loopTopic)&sort=recent', 'stream-item__title']
 	}
 
 #==============================================================================
 
-def writeJSON(dictObject):
-
-	with open(FILENAME, "w") as output:
-		json.dump(dictObject, output, indent=2)
-
-def web_source(link, anchorElemClass, limit):
+def web_source(link, anchorElemClass, limit, db, classObj):
 
 	page = requests.get(link)
 	soup = BeautifulSoup(page.content, 'html.parser')
 	results = soup.findAll("a", {"class": anchorElemClass})[:limit] #restricting to X
-	
+
 	for anchorElem in results:
 		tempLink = anchorElem['href']
-		
-		if tempLink not in prevLinks:
-			tempTitle = anchorElem.string.strip().title()
-			r = api.request('statuses/update', {'status':f'{tempTitle}\n{tempLink}'})
-			if r.status_code == 200:
-				prevLinks[tempLink] = tempTitle
-			else:
-				raise SystemError
+		tempTitle = anchorElem.string.strip().title()
 
-def executeBlock():
+		try:
+			newLink = classObj(title=tempTitle, link=tempLink)
+			db.session.add(newLink)
+			db.session.commit()
+		except IntegrityError or UniqueViolation:
+			db.session.rollback()
+			continue
+
+		r = api.request('statuses/update', {'status':f'{tempTitle}\n{tempLink}'})
+		if r.status_code != 200:
+			db.session.rollback()
+			raise SystemError
+
+def executeBlock(databaseInstance, tableClass):
 
 	try:
 		for topic in ['blockchain', 'fintech', 'cryptocurrency']:	
 			for siteInfo in scrapeList.values():
-				web_source(link=siteInfo[0].replace('(loopTopic)', topic), anchorElemClass=siteInfo[1], limit=3)
-	except:
-		writeJSON(prevLinks)
+				web_source(link=siteInfo[0].replace('(loopTopic)', topic), anchorElemClass=siteInfo[1], limit=1, db=databaseInstance, classObj=tableClass)
+	except SystemError:
 		return 500
-		
-	writeJSON(prevLinks)
+
 	return 200
