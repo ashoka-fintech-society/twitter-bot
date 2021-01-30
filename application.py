@@ -43,6 +43,10 @@ PASSWORD = os.getenv('PASSWORD')
 
 #==============================
 
+@app.route('/.well-known/acme-challenge/VYS0aL6ksJjVnU8yGnUx74LF66e5PWA6QHWMfMcXunA')
+def certificate():
+    return app.send_static_file('VYS0aL6ksJjVnU8yGnUx74LF66e5PWA6QHWMfMcXunA')
+
 @app.errorhandler(404)
 def page_not_found(e):
     return app.send_static_file('index.html'), 200
