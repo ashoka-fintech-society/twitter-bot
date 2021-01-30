@@ -45,16 +45,17 @@ def web_source(link, anchorElemClass, limit, db, classObj):
 
 		r = api.request('statuses/update', {'status':f'{tempTitle}\n{tempLink}'})
 		if r.status_code != 200:
-			db.session.rollback()
-			raise SystemError
+			db.session.delete(newLink)
+			db.session.commit()
+			raise ArithmeticError
 
 def executeBlock(databaseInstance, tableClass):
 
 	try:
 		for topic in ['blockchain', 'fintech', 'cryptocurrency']:	
 			for siteInfo in scrapeList.values():
-				web_source(link=siteInfo[0].replace('(loopTopic)', topic), anchorElemClass=siteInfo[1], limit=1, db=databaseInstance, classObj=tableClass)
-	except SystemError:
+				web_source(link=siteInfo[0].replace('(loopTopic)', topic), anchorElemClass=siteInfo[1], limit=2, db=databaseInstance, classObj=tableClass)
+	except ArithmeticError:
 		return 500
 
 	return 200

@@ -65,10 +65,11 @@ def tweet():
     else:
         return app.send_static_file('invalid.html')
 
-    if status == 500:
-        return app.send_static_file('failed.html')
-    elif status == 200:
+    if status == 200:
         return app.send_static_file('passed.html')
+    else:
+        return app.send_static_file('failed.html')
+    
 
 #==============================
 if __name__ == "__main__":
