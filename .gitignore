@@ -5,3 +5,4 @@ instance/
 .env
 other/
 .DS_Store
+secrets.txt

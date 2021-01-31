@@ -54,7 +54,7 @@ def executeBlock(databaseInstance, tableClass):
 	try:
 		for topic in ['blockchain', 'fintech', 'cryptocurrency']:	
 			for siteInfo in scrapeList.values():
-				web_source(link=siteInfo[0].replace('(loopTopic)', topic), anchorElemClass=siteInfo[1], limit=2, db=databaseInstance, classObj=tableClass)
+				web_source(link=siteInfo[0].replace('(loopTopic)', topic), anchorElemClass=siteInfo[1], limit=1, db=databaseInstance, classObj=tableClass)
 	except ArithmeticError:
 		return 500
 
