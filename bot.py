@@ -47,12 +47,12 @@ def tweetFunc(idList, db, classObj):
 	db.session.commit()
 	return 200
 
-def executeBlock(db, classObj, limit=2):
+def executeBlock(db, classObj, limit=3):
 
 	resultDict = []
 
 	try:
-		for topic in ['fintech', 'cryptocurrency']:	
+		for topic in ['fintech', 'cryptocurrency', 'bitcoin']:	
 			for siteInfo in scrapeList.values():
 
 				link = siteInfo[0].replace('(loopTopic)', topic)
