@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, session, redirect
+from flask import Flask, request, render_template
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv; load_dotenv()
@@ -39,15 +39,14 @@ class LinkModel(db.Model):
 #==============================
 
 PASSWORD = os.getenv('PASSWORD')
-SESSIONPW = os.getenv('SESSIONPW')
 
 #==============================
 
 def requirePW(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if session.get('pw') != SESSIONPW:
-            return redirect('/home')
+        if request.form.get('password') != PASSWORD:
+            return app.send_static_file('invalid.html')
         return f(*args, **kwargs)
     return decorated_function
 
@@ -58,19 +57,13 @@ def page_not_found(e):
 @app.route('/home', methods=['GET'])
 def home():
 
-    session.clear()
     return app.send_static_file('index.html'), 200
 
 @app.route('/search', methods=['POST'])
+@requirePW
 def search():
 
-    pwIn = request.form.get('password')
-
-    if pwIn == PASSWORD:
-        session['pw'] = SESSIONPW
-        results = bot.executeBlock(db, LinkModel)
-    else:
-        return app.send_static_file('invalid.html')
+    results = bot.executeBlock(db, LinkModel)
 
     if not isinstance(results, list):
         return app.send_static_file('failed.html')
