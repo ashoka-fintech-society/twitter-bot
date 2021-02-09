@@ -25,37 +25,58 @@ scrapeList = {
 
 #==============================================================================
 
-def web_source(link, anchorElemClass, limit, db, classObj):
+def tweetFunc(idList, db, classObj):
 
-	page = requests.get(link)
-	soup = BeautifulSoup(page.content, 'html.parser')
-	results = soup.findAll("a", {"class": anchorElemClass})[:limit] #restricting to X
+	tweetList = classObj.query.filter(classObj.id.in_(idList)).all()
+	success = list()
 
-	for anchorElem in results:
-		tempLink = anchorElem['href']
-		tempTitle = anchorElem.string.strip().title()
+	for x in tweetList:
 
-		try:
-			newLink = classObj(title=tempTitle, link=tempLink)
-			db.session.add(newLink)
-			db.session.commit()
-		except IntegrityError or UniqueViolation:
-			db.session.rollback()
-			continue
+		r = api.request('statuses/update', {'status':f'{x.title}\n{x.link}'})
 
-		r = api.request('statuses/update', {'status':f'{tempTitle}\n{tempLink}'})
 		if r.status_code != 200:
-			db.session.delete(newLink)
-			db.session.commit()
-			raise ArithmeticError
 
-def executeBlock(databaseInstance, tableClass):
+			classObj.query.filter(classObj.id.in_(list(set(idList) - set(success)))).delete()
+			db.session.commit()
+			return 500
+
+		else:
+			x.tweeted = True
+			success.append(x.id)
+	
+	db.session.commit()
+	return 200
+
+def executeBlock(db, classObj, limit=2):
+
+	resultDict = []
 
 	try:
-		for topic in ['blockchain', 'fintech', 'cryptocurrency']:	
+		for topic in ['fintech', 'cryptocurrency']:	
 			for siteInfo in scrapeList.values():
-				web_source(link=siteInfo[0].replace('(loopTopic)', topic), anchorElemClass=siteInfo[1], limit=1, db=databaseInstance, classObj=tableClass)
-	except ArithmeticError:
+
+				link = siteInfo[0].replace('(loopTopic)', topic)
+				anchorElemClass = siteInfo[1]
+		
+				page = requests.get(link)
+				soup = BeautifulSoup(page.content, 'html.parser')
+				results = soup.findAll("a", {"class": anchorElemClass})[:limit]
+
+				for anchorElem in results:
+					tempLink = anchorElem['href']
+					tempTitle = anchorElem.string.strip().title()
+
+					try:
+						newLink = classObj(title=tempTitle, link=tempLink)
+						db.session.add(newLink)
+						db.session.commit()
+					except IntegrityError or UniqueViolation:
+						db.session.rollback()
+						continue
+
+					resultDict.append({"id":newLink.id, "title":tempTitle})
+
+	except:
 		return 500
 
-	return 200
+	return resultDict

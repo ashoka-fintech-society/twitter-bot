@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>Twitter Bot</title>
+	<title>Twitter Bot (CHOOSE)</title>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 <!--===============================================================================================-->
@@ -17,27 +17,61 @@
 
 	<div class="container-contact100">
 
+		
 		<div class="wrap-contact100">
-			<form class="contact100-form validate-form" action="/search" method="POST">
+		
+			{% if length > 0 %}
+
+			<form class="contact100-form validate-form" action="/tweet" method="POST">
 				<span class="contact100-form-title">
 					Ashoka FinTech Society
 					<p>Twitter Bot</p>
 				</span>
+                
+				
+                <div class="wrap-input100">
+                  {% for item in data %}
+				  <label class="container">{{item.title}}
+                    <input type="checkbox" value="{{item.id}}" name='urlchoices'>
+                    <span class="checkmark"></span>
+                  </label>
+                  {% endfor %}
 
-				<div class="wrap-input100 validate-input" data-validate="Please enter your password">
-					<input class="input100" type="password" name="password" placeholder="Password">
-					<span class="focus-input100"></span>
-				</div>
+                </div> 
+				
+				<p></p>
 
 				<div class="container-contact100-form-btn">
 					<button class="contact100-form-btn">
 						<span>
-							<i class="fa fa-lock m-r-6" aria-hidden="true"></i>
-							Verify
+							<i class="fa fa-twitter m-r-6" aria-hidden="true"></i>
+							TWEET
 						</span>
 					</button>
 				</div>
 			</form>
+
+			{% else %}
+
+			<form class="contact100-form validate-form" action="/home" method="GET">
+				<span class="contact100-form-title">
+					Ashoka FinTech Society
+					<p>Twitter Bot</p>
+				</span>
+                
+
+				<div class="container-passed100-form-btn">
+					<button class="passed100-form-btn">
+						<span>
+							<i class="fa fa-check m-r-6" aria-hidden="true"></i>
+							CAUGHT UP
+						</span>
+					</button>
+				</div>
+			</form>
+
+			{% endif %}
+
 		</div>
 	</div>
 

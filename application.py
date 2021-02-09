@@ -1,4 +1,5 @@
-from flask import Flask, request
+from flask import Flask, request, render_template, session, redirect
+from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv; load_dotenv()
 import gunicorn
@@ -9,6 +10,7 @@ import bot
 application = app = Flask(__name__, static_url_path='', static_folder='static')
 app.url_map.strict_slashes = False
 app.config['SECRET_KEY'] = os.urandom(24)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 #==============================
 
@@ -20,15 +22,12 @@ class LinkModel(db.Model):
     __tablename__ = 'links'
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String())
-    link = db.Column(db.String())
-
-    def __init__(self, title, link):
-        self.title = title
-        self.link = link
+    title = db.Column(db.String(), unique=True, nullable=False)
+    link = db.Column(db.String(), unique=True, nullable=False)
+    tweeted = db.Column(db.Boolean())
 
     def __repr__(self):
-        return f'<Title: {self.title}>'
+        return f'<Title: {self.title.strip()}>'
     
     def serialize(self):
         return {
@@ -40,12 +39,17 @@ class LinkModel(db.Model):
 #==============================
 
 PASSWORD = os.getenv('PASSWORD')
+SESSIONPW = os.getenv('SESSIONPW')
 
 #==============================
 
-@app.route('/.well-known/acme-challenge/VYS0aL6ksJjVnU8yGnUx74LF66e5PWA6QHWMfMcXunA')
-def certificate():
-    return app.send_static_file('VYS0aL6ksJjVnU8yGnUx74LF66e5PWA6QHWMfMcXunA')
+def requirePW(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('pw') != SESSIONPW:
+            return redirect('/home')
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -53,17 +57,32 @@ def page_not_found(e):
 
 @app.route('/home', methods=['GET'])
 def home():
+
+    session.clear()
     return app.send_static_file('index.html'), 200
 
-@app.route('/tweet', methods=['POST'])
-def tweet():
+@app.route('/search', methods=['POST'])
+def search():
 
     pwIn = request.form.get('password')
 
-    if pwIn and pwIn == PASSWORD:
-        status = bot.executeBlock(databaseInstance = db, tableClass = LinkModel)
+    if pwIn == PASSWORD:
+        session['pw'] = SESSIONPW
+        results = bot.executeBlock(db, LinkModel)
     else:
         return app.send_static_file('invalid.html')
+
+    if not isinstance(results, list):
+        return app.send_static_file('failed.html')
+    else:
+        return render_template('choose.html', data=results, length=len(results))
+
+@app.route('/tweet', methods=['POST'])
+@requirePW
+def tweet():
+
+    idList = [int(i) for i in request.form.getlist('urlchoices')]
+    status = bot.tweetFunc(idList, db, LinkModel)
 
     if status == 200:
         return app.send_static_file('passed.html')
