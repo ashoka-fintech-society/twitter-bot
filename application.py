@@ -46,6 +46,13 @@ def requirePW(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if request.form.get('password') != PASSWORD:
+
+            idList = [int(i) for i in request.form.getlist('urlchoices')]
+
+            if len(idList) != 0:
+                LinkModel.query.filter(LinkModel.id.in_(idList)).delete(synchronize_session=False)
+                db.session.commit()
+
             return app.send_static_file('invalid.html')
         return f(*args, **kwargs)
     return decorated_function

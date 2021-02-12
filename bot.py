@@ -36,7 +36,7 @@ def tweetFunc(idList, db, classObj):
 
 		if r.status_code != 200:
 
-			classObj.query.filter(classObj.id.in_(list(set(idList) - set(success)))).delete()
+			classObj.query.filter(classObj.id.in_(list(set(idList) - set(success)))).delete(synchronize_session=False)
 			db.session.commit()
 			return 500
 
